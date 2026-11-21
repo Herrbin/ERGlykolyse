@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OPERATION ATP-BLACKOUT | Bio-Labor Escape Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #060b14;
+      --panel-bg: #0c1424;
+      --card-bg: #111c32;
+      --cyan: #06b6d4;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .grid-bg {
+      background-image: 
+        linear-gradient(to right, rgba(6, 182, 212, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(6, 182, 212, 0.04) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+    .code-digit {
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: #060b14;
+      border: 2px solid #1e293b;
+      color: #22d3ee;
+      border-radius: 0.75rem;
+      transition: all 0.2s;
+    }
+    .code-digit:focus {
+      outline: none;
+      border-color: #06b6d4;
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25);
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      background: #1e293b;
+      height: 8px;
+      border-radius: 4px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #06b6d4;
+      cursor: pointer;
+      border: 2px solid #0f172a;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shake 0.4s ease-in-out;
+    }
+    @keyframes penaltyFlash {
+      0% { background-color: rgba(244, 63, 94, 0.35); }
+      100% { background-color: transparent; }
+    }
+    .flash-penalty {
+      animation: penaltyFlash 0.8s ease-out;
+    }
+    .fade-in {
+      animation: fadeIn 0.25s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="grid-bg flex flex-col justify-between selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- Penalty Overlay -->
+  <div id="penalty-flash-layer" class="fixed inset-0 pointer-events-none z-50"></div>
+
+  <!-- Top Navigation & Status Header -->
+  <header class="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 sm:px-8 py-3">
+    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand / Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-[11px] font-mono-tech uppercase tracking-widest text-cyan-400">Zell-Notfallterminal • Sektor Zytosol</div>
+          <h1 class="text-base sm:text-lg font-extrabold text-white tracking-tight">OPERATION ATP-BLACKOUT</h1>
+        </div>
+      </div>
+
+      <!-- Room Step Indicator -->
+      <div id="room-pills" class="hidden md:flex items-center gap-2">
+        <div id="pill-1" class="px-3 py-1 rounded-full text-xs font-mono-tech border border-slate-800 text-slate-500">Raum 1</div>
+        <span class="text-slate-700">→</span>
+        <div id="pill-2" class="px-3 py-1 rounded-full text-xs font-mono-tech border border-slate-800 text-slate-500">Raum 2</div>
+        <span class="text-slate-700">→</span>
+        <div id="pill-3" class="px-3 py-1 rounded-full text-xs font-mono-tech border border-slate-800 text-slate-500">Raum 3</div>
+        <span class="text-slate-700">→</span>
+        <div id="pill-4" class="px-3 py-1 rounded-full text-xs font-mono-tech border border-slate-800 text-slate-500">Raum 4</div>
+      </div>
+
+      <!-- Right Controls: Handbook & Timer -->
+      <div class="flex items-center gap-3">
+        <button onclick="openHandbook()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xs sm:text-sm font-semibold transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          <span>Labor-Handbuch</span>
+        </button>
+
+        <div id="timer-box" class="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="timer-dot"></span>
+          <span id="timer-display" class="font-mono-tech text-lg sm:text-xl font-bold text-white tracking-wider">30:00</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Single-Column Container -->
+  <main class="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ==================== INTRO SCREEN ==================== -->
+    <section id="screen-intro" class="fade-in space-y-8">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono-tech font-semibold">
+          <span>⚠️ SYSTEMALARM: AKUTE ZELLULÄRE HYPOXIE</span>
+        </div>
+
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white leading-tight">
+          Die Mitochondrien sind ausgefallen. Rettet die Zelle über die Glykolyse!
+        </h2>
+
+        <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+          Durch einen akuten Sauerstoffmangel steht die Atmungskette still. Euch bleiben exakt <strong class="text-white">30 Minuten</strong>, um den zytosolischen Notstromgenerator – die <strong class="text-cyan-400">Glykolyse</strong> – über vier Sicherheitsräume manuell hochzufahren, bevor das Membranpotenzial kollabiert.
+        </p>
+
+
+        <!-- Intro Video Player (Introza.mp4) -->
+        <div class="bg-slate-950 border border-cyan-500/30 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-mono-tech">
+            <span class="text-cyan-400 font-bold flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              EINSATZ-BRIEFING // VIDEO-ÜBERTRAGUNG (Introza.mp4)
+            </span>
+            <span class="text-slate-400">Bitte zuerst abspielen</span>
+          </div>
+          <div class="relative bg-black aspect-video flex items-center justify-center">
+            <video id="intro-video" class="w-full h-full object-contain" controls playsinline preload="metadata" onerror="document.getElementById('video-fallback-hint').classList.remove('hidden')">
+              <source src="Introza.mp4" type="video/mp4" />
+              Dein Browser unterstützt das HTML5-Video-Tag nicht.
+            </video>
+            <div id="video-fallback-hint" class="hidden absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center space-y-2">
+              <div class="text-amber-400 text-2xl">🎬</div>
+              <div class="text-sm font-bold text-white">Videodatei <code class="text-cyan-400">Introza.mp4</code> nicht gefunden</div>
+              <p class="text-xs text-slate-400 max-w-md">
+                Lege deine Videodatei mit dem exakten Namen <strong class="text-slate-200">Introza.mp4</strong> in denselben Ordner wie die <strong class="text-slate-200">index.html</strong> und lade die Seite neu.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-4 pt-2">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+            <div class="text-cyan-400 font-mono-tech text-xs font-bold mb-1">01 // STRUKTUR</div>
+            <div class="text-sm font-semibold text-white mb-1">4 Räume nacheinander</div>
+            <p class="text-xs text-slate-400">Jeder Raum enthält einen klaren Arbeitsauftrag, eine Bauplan-Abbildung und 2–3 Teilschritte.</p>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+            <div class="text-amber-400 font-mono-tech text-xs font-bold mb-1">02 // MATERIAL</div>
+            <div class="text-sm font-semibold text-white mb-1">Labor-Handbuch nutzen</div>
+            <p class="text-xs text-slate-400">Alle Fachdaten (Enzyme, Regulation, Gifte, ΔG-Werte) findet ihr oben rechts im Handbuch.</p>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+            <div class="text-rose-400 font-mono-tech text-xs font-bold mb-1">03 // PRÄZISION</div>
+            <div class="text-sm font-semibold text-white mb-1">Zeitstrafe (-60 Sek.)</div>
+            <p class="text-xs text-slate-400">Falsche Freigaben kosten wertvolles ATP und ziehen 60 Sekunden vom Countdown ab.</p>
+          </div>
+        </div>
+
+        <div class="pt-4 flex flex-wrap items-center gap-4">
+          <button onclick="startMission()" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-base tracking-wide transition shadow-lg shadow-cyan-500/20 cursor-pointer">
+            MISSION STARTEN & RAUM 1 BETRETEN →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ROOM 1 ==================== -->
+    <section id="screen-room-1" class="hidden fade-in space-y-6">
+      
+      <!-- Mission Header + Illustration Card -->
+      <div class="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono-tech text-xs font-bold">RAUM 1 VON 4 • SCHRITTE 1–3</span>
+          <span class="text-xs font-mono-tech text-slate-400">Zell-Energiebilanz: <strong class="text-amber-400">-2 ATP (Investition)</strong></span>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-white mb-4">Die Schleuse & Aktivierungsphase</h2>
+
+        <div class="grid md:grid-cols-12 gap-6 items-center">
+          <!-- Clear Task Box -->
+          <div class="md:col-span-7 bg-slate-950/90 border border-slate-800 rounded-xl p-5 space-y-3">
+            <div class="text-xs font-mono-tech uppercase tracking-wider text-cyan-400 font-bold">📋 Dein Auftrag in diesem Raum:</div>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Glukose ist in die Zelle gelangt, droht aber wieder hinauszudiffundieren. Mache das Molekül reaktionsfähig, indem du drei Teilaufgaben löst:
+            </p>
+            <ol class="text-sm text-slate-200 space-y-2 list-decimal list-inside">
+              <li><strong class="text-white">Schritt 1.1:</strong> Wähle die ersten drei Enzyme und ihren ATP-Verbrauch.</li>
+              <li><strong class="text-white">Schritt 1.2:</strong> Aktiviere das Schrittmacher-Enzym <span class="text-cyan-300">PFK-1</span> über die Zellregler.</li>
+              <li><strong class="text-white">Schritt 1.3:</strong> Lies die C-Atom-Positionen der Phosphatgruppen aus der Abbildung ab.</li>
+            </ol>
+          </div>
+
+          <!-- Diagram Card -->
+          <div class="md:col-span-5">
+            <div onclick="openLightbox('images/modul1_investition.jpg', 'Abb. 1: Investitionsphase der Glykolyse (Schritte 1–3)')" class="group relative rounded-xl overflow-hidden border border-slate-700 hover:border-cyan-400 cursor-zoom-in bg-slate-950">
+              <img src="images/modul1_investition.jpg" alt="Investitionsphase der Glykolyse" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300" />
+              <div class="bg-slate-950/90 px-3 py-2 flex items-center justify-between text-xs text-slate-300 border-t border-slate-800">
+                <span>Abb. 1: Schritte 1–3 (C1 & C6)</span>
+                <span class="text-cyan-400 font-semibold">🔍 Vergrößern</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-step Navigation Tabs -->
+      <div class="grid grid-cols-3 gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+        <button onclick="switchSubStep(1, 1)" id="tab-r1-s1" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer bg-cyan-500 text-slate-950">
+          1.1 Enzyme (Schritte 1–3)
+        </button>
+        <button onclick="switchSubStep(1, 2)" id="tab-r1-s2" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer text-slate-400 hover:text-white">
+          1.2 PFK-1 Regler
+        </button>
+        <button onclick="switchSubStep(1, 3)" id="tab-r1-s3" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer text-slate-400 hover:text-white">
+          1.3 Struktur-Code
+        </button>
+      </div>
+
+      <!-- Sub-step 1.1 -->
+      <div id="panel-r1-s1" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+        <div>
+          <h3 class="text-lg font-bold text-white">Schritt 1.1: Enzym-Kaskade konfigurieren</h3>
+          <p class="text-sm text-slate-400 mt-1">Ordne den Reaktionen 1 bis 3 jeweils das passende Enzym und den Co-Substrat-Umsatz zu.</p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Reaction 1 -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-2 gap-4 items-center">
+            <div>
+              <span class="text-xs font-mono-tech text-cyan-400">REAKTION 1</span>
+              <div class="font-semibold text-white text-sm mt-0.5">Glukose → Glukose-6-phosphat</div>
+            </div>
+            <div class="grid grid-cols-1 gap-2">
+              <select id="r1-enz1" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none">
+                <option value="">-- Enzym wählen --</option>
+                <option value="hexokinase">Hexokinase</option>
+                <option value="phosphatase">Glukose-6-Phosphatase</option>
+                <option value="isomerase">Phosphoglukose-Isomerase</option>
+                <option value="pfk1">Phosphofruktokinase-1 (PFK-1)</option>
+                <option value="aldolase">Aldolase</option>
+              </select>
+              <select id="r1-atp1" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none">
+                <option value="">-- ATP-Umsatz wählen --</option>
+                <option value="invest">ATP → ADP (ATP-Verbrauch)</option>
+                <option value="none">Kein ATP-Umsatz</option>
+                <option value="gain">ADP → ATP (ATP-Gewinn)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Reaction 2 -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-2 gap-4 items-center">
+            <div>
+              <span class="text-xs font-mono-tech text-cyan-400">REAKTION 2</span>
+              <div class="font-semibold text-white text-sm mt-0.5">Glukose-6-phosphat → Fruktose-6-phosphat</div>
+            </div>
+            <div class="grid grid-cols-1 gap-2">
+              <select id="r1-enz2" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none">
+                <option value="">-- Enzym wählen --</option>
+                <option value="hexokinase">Hexokinase</option>
+                <option value="isomerase">Phosphoglukose-Isomerase</option>
+                <option value="mutase">Phosphoglycerat-Mutase</option>
+                <option value="pfk1">Phosphofruktokinase-1 (PFK-1)</option>
+                <option value="tpi">Triosephosphat-Isomerase</option>
+              </select>
+              <select id="r1-atp2" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none">
+                <option value="">-- ATP-Umsatz wählen --</option>
+                <option value="invest">ATP → ADP (ATP-Verbrauch)</option>
+                <option value="none">Kein ATP-Umsatz</option>
+                <option value="gain">ADP → ATP (ATP-Gewinn)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Reaction 3 -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-2 gap-4 items-center">
+            <div>
+              <span class="text-xs font-mono-tech text-cyan-400">REAKTION 3</span>
+              <div class="font-semibold text-white text-sm mt-0.5">Fruktose-6-phosphat → Fruktose-1,6-bisphosphat</div>
+            </div>
+            <div class="grid grid-cols-1 gap-2">
+              <select id="r1-enz3" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none">
+                <option value="">-- Enzym wählen --</option>
+                <option value="hexokinase">Hexokinase</option>
+                <option value="isomerase">Phosphoglukose-Isomerase</option>
+                <option value="pfk1">Phosphofruktokinase-1 (PFK-1)</option>
+                <option value="pyruvatkinase">Pyruvat-Kinase</option>
+                <option value="aldolase">Aldolase</option>
+              </select>
+              <select id="r1-atp3" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none">
+                <option value="">-- ATP-Umsatz wählen --</option>
+                <option value="invest">ATP → ADP (ATP-Verbrauch)</option>
+                <option value="none">Kein ATP-Umsatz</option>
+                <option value="gain">ADP → ATP (ATP-Gewinn)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="switchSubStep(1, 2)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-sm transition cursor-pointer">
+            Weiter zu Schritt 1.2 →
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-step 1.2 -->
+      <div id="panel-r1-s2" class="hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-bold text-white">Schritt 1.2: Allosterische Regulation der PFK-1</h3>
+            <p class="text-sm text-slate-400 mt-1">Stelle die vier zellulären Parameter so ein, dass die PFK-1 <strong class="text-white">maximal aktiviert</strong> wird (siehe Handbuch: Akte II).</p>
+          </div>
+          <span id="pfk1-live-badge" class="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono-tech text-xs font-bold">
+            STATUS: GEDROSSELT
+          </span>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-5">
+          <!-- Slider 1: ATP -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="font-semibold text-white">Zytosolisches ATP</span>
+              <span id="lbl-atp" class="font-mono-tech text-cyan-400 font-bold">MITTEL</span>
+            </div>
+            <input type="range" id="sl-atp" min="0" max="2" step="1" value="1" oninput="updatePFKLabels()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-500 font-mono-tech">
+              <span>NIEDRIG</span>
+              <span>MITTEL</span>
+              <span>HOCH</span>
+            </div>
+          </div>
+
+          <!-- Slider 2: AMP -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="font-semibold text-white">AMP-Konzentration</span>
+              <span id="lbl-amp" class="font-mono-tech text-cyan-400 font-bold">MITTEL</span>
+            </div>
+            <input type="range" id="sl-amp" min="0" max="2" step="1" value="1" oninput="updatePFKLabels()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-500 font-mono-tech">
+              <span>NIEDRIG</span>
+              <span>MITTEL</span>
+              <span>HOCH</span>
+            </div>
+          </div>
+
+          <!-- Slider 3: Citrat -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="font-semibold text-white">Citrat-Spiegel</span>
+              <span id="lbl-citrate" class="font-mono-tech text-cyan-400 font-bold">MITTEL</span>
+            </div>
+            <input type="range" id="sl-citrate" min="0" max="2" step="1" value="1" oninput="updatePFKLabels()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-500 font-mono-tech">
+              <span>NIEDRIG</span>
+              <span>MITTEL</span>
+              <span>HOCH</span>
+            </div>
+          </div>
+
+          <!-- Slider 4: pH -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="font-semibold text-white">Intrazellulärer pH-Wert</span>
+              <span id="lbl-ph" class="font-mono-tech text-cyan-400 font-bold">LEICHT SAUER</span>
+            </div>
+            <input type="range" id="sl-ph" min="0" max="2" step="1" value="1" oninput="updatePFKLabels()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-500 font-mono-tech">
+              <span>SAUER (6,4)</span>
+              <span>6,8</span>
+              <span>NEUTRAL (7,2)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between pt-2">
+          <button onclick="switchSubStep(1, 1)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold cursor-pointer">
+            ← Zurück
+          </button>
+          <button onclick="switchSubStep(1, 3)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-sm transition cursor-pointer">
+            Weiter zu Schritt 1.3 →
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-step 1.3 -->
+      <div id="panel-r1-s3" class="hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div>
+          <h3 class="text-lg font-bold text-white">Schritt 1.3: Phosphorylierungs-Code eingeben</h3>
+          <p class="text-sm text-slate-400 mt-1">
+            Lies aus <strong class="text-cyan-300">Abb. 1</strong> die Nummern der Kohlenstoffatome (C1 bis C6) ab, an denen die Phosphatgruppen hängen:
+          </p>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-4 max-w-xl mx-auto">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center space-y-2">
+            <div class="text-xs font-mono-tech text-cyan-400 font-bold">ZIFFER 1</div>
+            <p class="text-xs text-slate-400">C-Atom mit Phosphat in <strong>Glukose-6-phosphat</strong></p>
+            <input type="text" id="r1-code1" maxlength="1" placeholder="?" class="code-digit w-16 h-14 mx-auto block" />
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center space-y-2">
+            <div class="text-xs font-mono-tech text-cyan-400 font-bold">ZIFFER 2</div>
+            <p class="text-xs text-slate-400">Neu phosphoryliertes C-Atom in Schritt 3</p>
+            <input type="text" id="r1-code2" maxlength="1" placeholder="?" class="code-digit w-16 h-14 mx-auto block" />
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center space-y-2">
+            <div class="text-xs font-mono-tech text-cyan-400 font-bold">ZIFFER 3</div>
+            <p class="text-xs text-slate-400">Bereits besetztes C-Atom in <strong>F-1,6-BP</strong></p>
+            <input type="text" id="r1-code3" maxlength="1" placeholder="?" class="code-digit w-16 h-14 mx-auto block" />
+          </div>
+        </div>
+
+        <div id="feedback-r1" class="hidden rounded-xl p-4 text-sm"></div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-800">
+          <button onclick="switchSubStep(1, 2)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold cursor-pointer">
+            ← Zurück
+          </button>
+          <button onclick="validateRoom1()" class="px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm tracking-wide transition shadow-lg shadow-emerald-500/20 cursor-pointer">
+            RAUM 1 VALIDIEREN & SCHLEUSE ÖFFNEN ✓
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ROOM 2 ==================== -->
+    <section id="screen-room-2" class="hidden fade-in space-y-6">
+      
+      <!-- Mission Header + Illustration Card -->
+      <div class="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono-tech text-xs font-bold">RAUM 2 VON 4 • SCHRITTE 4–5</span>
+          <span class="text-xs font-mono-tech text-slate-400">Zell-Energiebilanz: <strong class="text-amber-400">-2 ATP (Investition)</strong></span>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-white mb-4">Der Spaltreaktor & Das Isomerie-Paradoxon</h2>
+
+        <div class="grid md:grid-cols-12 gap-6 items-center">
+          <!-- Clear Task Box -->
+          <div class="md:col-span-7 bg-slate-950/90 border border-slate-800 rounded-xl p-5 space-y-3">
+            <div class="text-xs font-mono-tech uppercase tracking-wider text-cyan-400 font-bold">📋 Dein Auftrag in diesem Raum:</div>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Die Aldolase spaltet Fruktose-1,6-bisphosphat in zwei C3-Körper. Doch im Reaktor staut sich DHAP an. Löse das Gleichgewichts-Problem:
+            </p>
+            <ol class="text-sm text-slate-200 space-y-2 list-decimal list-inside">
+              <li><strong class="text-white">Schritt 2.1:</strong> Bestimme die funktionellen Gruppen von <strong>GAP</strong> und <strong>DHAP</strong>.</li>
+              <li><strong class="text-white">Schritt 2.2:</strong> Erkläre, warum die Reaktion in der Zelle trotz 96% DHAP-Gleichgewicht komplett nach rechts abläuft.</li>
+            </ol>
+          </div>
+
+          <!-- Diagram Card -->
+          <div class="md:col-span-5">
+            <div onclick="openLightbox('images/modul2_spaltung.jpg', 'Abb. 2: Spaltung von Fruktose-1,6-bisphosphat durch Aldolase & Triosephosphat-Isomerase')" class="group relative rounded-xl overflow-hidden border border-slate-700 hover:border-cyan-400 cursor-zoom-in bg-slate-950">
+              <img src="images/modul2_spaltung.jpg" alt="Spaltung in GAP und DHAP" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300" />
+              <div class="bg-slate-950/90 px-3 py-2 flex items-center justify-between text-xs text-slate-300 border-t border-slate-800">
+                <span>Abb. 2: Spaltung (GAP & DHAP)</span>
+                <span class="text-cyan-400 font-semibold">🔍 Vergrößern</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-step Navigation Tabs -->
+      <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+        <button onclick="switchSubStep(2, 1)" id="tab-r2-s1" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer bg-cyan-500 text-slate-950">
+          2.1 Struktur-Analyse (GAP vs. DHAP)
+        </button>
+        <button onclick="switchSubStep(2, 2)" id="tab-r2-s2" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer text-slate-400 hover:text-white">
+          2.2 Fließgleichgewicht & Faktor
+        </button>
+      </div>
+
+      <!-- Sub-step 2.1 -->
+      <div id="panel-r2-s1" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+        <div>
+          <h3 class="text-lg font-bold text-white">Schritt 2.1: Die zwei Spaltprodukte klassifizieren</h3>
+          <p class="text-sm text-slate-400 mt-1">Vergleiche die Carbonylgruppen (C=O) in <strong class="text-cyan-300">Abb. 2</strong> und ordne beide C3-Moleküle korrekt zu.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-5">
+          <!-- GAP -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-4">
+            <div class="text-xs font-mono-tech text-emerald-400 font-bold">MOLEKÜL A: GLYCERALDEHYD-3-PHOSPHAT (GAP)</div>
+            <div class="space-y-2">
+              <label class="block text-xs text-slate-400">Funktionelle Gruppe & Zuckerklasse:</label>
+              <select id="r2-gap-group" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                <option value="">-- Bitte wählen --</option>
+                <option value="aldose">Aldehydgruppe (-CHO am C1) → Aldose</option>
+                <option value="ketose">Ketogruppe (C=O am C2) → Ketose</option>
+                <option value="carboxyl">Carboxylgruppe (-COOH) → Carbonsäure</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-xs text-slate-400">Weiterer Weg in der Glykolyse:</label>
+              <select id="r2-gap-fate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                <option value="">-- Bitte wählen --</option>
+                <option value="direct">Wird direkt in Schritt 6 (Ertragsphase) abgebaut</option>
+                <option value="deadend">Sackgasse – muss erst isomerisiert werden</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- DHAP -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-4">
+            <div class="text-xs font-mono-tech text-amber-400 font-bold">MOLEKÜL B: DIHYDROXYACETONPHOSPHAT (DHAP)</div>
+            <div class="space-y-2">
+              <label class="block text-xs text-slate-400">Funktionelle Gruppe & Zuckerklasse:</label>
+              <select id="r2-dhap-group" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                <option value="">-- Bitte wählen --</option>
+                <option value="aldose">Aldehydgruppe (-CHO am C1) → Aldose</option>
+                <option value="ketose">Ketogruppe (C=O am C2) → Ketose</option>
+                <option value="carboxyl">Carboxylgruppe (-COOH) → Carbonsäure</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-xs text-slate-400">Weiterer Weg in der Glykolyse:</label>
+              <select id="r2-dhap-fate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                <option value="">-- Bitte wählen --</option>
+                <option value="direct">Wird direkt in Schritt 6 (Ertragsphase) abgebaut</option>
+                <option value="isomerize">Sackgasse – wird durch Triosephosphat-Isomerase zu GAP</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="switchSubStep(2, 2)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-sm transition cursor-pointer">
+            Weiter zu Schritt 2.2 →
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-step 2.2 -->
+      <div id="panel-r2-s2" class="hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div>
+          <h3 class="text-lg font-bold text-white">Schritt 2.2: Das thermodynamische Paradoxon lösen</h3>
+          <p class="text-sm text-slate-400 mt-1">Im geschlossenen Reagenzglas liegt das Gleichgewicht der Triosephosphat-Isomerase zu <strong class="text-amber-400">96 % auf Seite von DHAP</strong> (ΔG°' = +7,5 kJ/mol). Warum entsteht in der Zelle dennoch 100 % GAP?</p>
+        </div>
+
+        <div class="space-y-3">
+          <label class="flex items-start gap-3 p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <input type="radio" name="r2-thermo" value="atp_pump" class="mt-1 accent-cyan-400" />
+            <span class="text-sm text-slate-300">Die Triosephosphat-Isomerase verbraucht ein zusätzliches ATP-Molekül, um die endergonische Reaktion aktiv zu erzwingen.</span>
+          </label>
+          <label class="flex items-start gap-3 p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <input type="radio" name="r2-thermo" value="le_chatelier" class="mt-1 accent-cyan-400" />
+            <span class="text-sm text-slate-300"><strong class="text-white">Fließgleichgewicht (Prinzip von Le Chatelier):</strong> Da GAP in Schritt 6 permanent durch die Folge-Reaktion verbraucht wird, sinkt die GAP-Konzentration extrem ab – das reale ΔG wird negativ und zieht DHAP laufend nach.</span>
+          </label>
+          <label class="flex items-start gap-3 p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <input type="radio" name="r2-thermo" value="heat" class="mt-1 accent-cyan-400" />
+            <span class="text-sm text-slate-300">Bei 37 °C Körpertemperatur kehrt sich das Vorzeichen von ΔG°' spontan von positiv auf negativ um.</span>
+          </label>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div class="text-sm font-bold text-white">Stöchiometrischer Multiplikator ab Schritt 6:</div>
+            <p class="text-xs text-slate-400">Wie viele Moleküle GAP laufen pro eingesetztem Glukosemolekül in die Ertragsphase?</p>
+          </div>
+          <input type="text" id="r2-factor" maxlength="1" placeholder="?" class="code-digit w-16 h-14" />
+        </div>
+
+        <div id="feedback-r2" class="hidden rounded-xl p-4 text-sm"></div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-800">
+          <button onclick="switchSubStep(2, 1)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold cursor-pointer">
+            ← Zurück
+          </button>
+          <button onclick="validateRoom2()" class="px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm tracking-wide transition shadow-lg shadow-emerald-500/20 cursor-pointer">
+            RAUM 2 VALIDIEREN & WEITER →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ROOM 3 ==================== -->
+    <section id="screen-room-3" class="hidden fade-in space-y-6">
+      
+      <!-- Mission Header + Illustration Card -->
+      <div class="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono-tech text-xs font-bold">RAUM 3 VON 4 • SCHRITTE 6–7</span>
+          <span class="text-xs font-mono-tech text-slate-400">Zell-Energiebilanz: <strong class="text-cyan-400">±0 ATP (Break-Even)</strong></span>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-white mb-4">Das Redox-Kraftwerk & Energetische Kopplung</h2>
+
+        <div class="grid md:grid-cols-12 gap-6 items-center">
+          <!-- Clear Task Box -->
+          <div class="md:col-span-7 bg-slate-950/90 border border-slate-800 rounded-xl p-5 space-y-3">
+            <div class="text-xs font-mono-tech uppercase tracking-wider text-cyan-400 font-bold">📋 Dein Auftrag in diesem Raum:</div>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Die Ertragsphase (Pay-Off) startet! Jetzt wird Oxidation mit Phosphorylierung gekoppelt, um erstmals ATP zu gewinnen:
+            </p>
+            <ol class="text-sm text-slate-200 space-y-2 list-decimal list-inside">
+              <li><strong class="text-white">Schritt 3.1:</strong> Analysiere die Redox-Phosphorylierung an der <strong>GAP-Dehydrogenase (Schritt 6)</strong>.</li>
+              <li><strong class="text-white">Schritt 3.2:</strong> Konfiguriere die erste <strong>Substratkettenphosphorylierung (Schritt 7)</strong>.</li>
+            </ol>
+          </div>
+
+          <!-- Diagram Card -->
+          <div class="md:col-span-5">
+            <div onclick="openLightbox('images/modul3_redox.jpg', 'Abb. 3: Schritte 6 & 7 – Oxidation durch GAPDH und Substratkettenphosphorylierung')" class="group relative rounded-xl overflow-hidden border border-slate-700 hover:border-cyan-400 cursor-zoom-in bg-slate-950">
+              <img src="images/modul3_redox.jpg" alt="Schritte 6 und 7 der Glykolyse" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300" />
+              <div class="bg-slate-950/90 px-3 py-2 flex items-center justify-between text-xs text-slate-300 border-t border-slate-800">
+                <span>Abb. 3: Schritte 6 & 7 (GAPDH & PGK)</span>
+                <span class="text-cyan-400 font-semibold">🔍 Vergrößern</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-step Navigation Tabs -->
+      <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+        <button onclick="switchSubStep(3, 1)" id="tab-r3-s1" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer bg-cyan-500 text-slate-950">
+          3.1 Schritt 6: Oxidation & Pᵢ-Einbau
+        </button>
+        <button onclick="switchSubStep(3, 2)" id="tab-r3-s2" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer text-slate-400 hover:text-white">
+          3.2 Schritt 7: Erster ATP-Gewinn
+        </button>
+      </div>
+
+      <!-- Sub-step 3.1 -->
+      <div id="panel-r3-s1" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+        <div>
+          <h3 class="text-lg font-bold text-white">Schritt 3.1: GAPDH-Reaktionskammer (GAP → 1,3-Bisphosphoglycerat)</h3>
+          <p class="text-sm text-slate-400 mt-1">Prüfe <strong class="text-cyan-300">Abb. 3</strong> genau: Wie entsteht die zweite Phosphatgruppe am C1-Atom ohne ATP-Einsatz?</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="block text-xs font-mono-tech text-cyan-400 font-bold">1. HERKUNFT DER ZWEITEN PHOSPHATGRUPPE (AM C1):</label>
+            <select id="r3-pi" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+              <option value="">-- Quelle auswählen --</option>
+              <option value="atp">Hydrolyse eines weiteren ATP-Moleküls</option>
+              <option value="inorganic_pi">Freies anorganisches Orthophosphat (Pᵢ / HPO₄²⁻) aus dem Zytosol</option>
+              <option value="gtp">Phosphatübertragung von GTP</option>
+            </select>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="block text-xs font-mono-tech text-cyan-400 font-bold">2. GEKOPPELTER REDOX-PROZESS AM COENZYM:</label>
+            <select id="r3-redox" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+              <option value="">-- Coenzym-Reaktion auswählen --</option>
+              <option value="nad_red">NAD⁺ wird zu NADH + H⁺ reduziert (Aufnahme von 2 e⁻ und 1 H⁺)</option>
+              <option value="nadh_ox">NADH + H⁺ wird zu NAD⁺ oxidiert</option>
+              <option value="fad_red">FAD wird zu FADH₂ reduziert</option>
+            </select>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="block text-xs font-mono-tech text-cyan-400 font-bold">3. ENERGETISCHER CHARAKTER DER NEUEN C1-BINDUNG:</label>
+            <select id="r3-bond" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+              <option value="">-- Bindungstyp auswählen --</option>
+              <option value="ester">Energiearmer Phosphorsäureester (ΔG°' = -13 kJ/mol)</option>
+              <option value="anhydride">Energiereiches gemischtes Säureanhydrid (ΔG°' = -49,3 kJ/mol)</option>
+              <option value="peptide">Stabile Peptidbindung</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="switchSubStep(3, 2)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-sm transition cursor-pointer">
+            Weiter zu Schritt 3.2 →
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-step 3.2 -->
+      <div id="panel-r3-s2" class="hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+        <div>
+          <h3 class="text-lg font-bold text-white">Schritt 3.2: Substratkettenphosphorylierung (1,3-BPG → 3-PG)</h3>
+          <p class="text-sm text-slate-400 mt-1">Das hohe Gruppenübertragungspotenzial von 1,3-Bisphosphoglycerat wird jetzt direkt auf ADP übertragen.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="block text-xs font-mono-tech text-emerald-400 font-bold">1. KATALYSIERENDES ENZYM IN SCHRITT 7:</label>
+            <select id="r3-pgk" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+              <option value="">-- Enzym auswählen --</option>
+              <option value="pgk">Phosphoglycerat-Kinase (PGK)</option>
+              <option value="mutase">Phosphoglycerat-Mutase</option>
+              <option value="enolase">Enolase</option>
+              <option value="atpsynthase">ATP-Synthase</option>
+            </select>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="block text-xs font-mono-tech text-emerald-400 font-bold">2. MECHANISMUS DER ATP-BILDUNG:</label>
+            <select id="r3-mech" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+              <option value="">-- Mechanismus auswählen --</option>
+              <option value="substrate">Substratkettenphosphorylierung (direkter Phosphattransfer vom Substrat auf ADP)</option>
+              <option value="chemiosmotic">Chemiosmotische Phosphorylierung über einen Protonengradienten</option>
+            </select>
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="block text-xs font-mono-tech text-emerald-400 font-bold">3. NETTO-ATP-BILANZ DER GESAMTEN ZELLE NACH SCHRITT 7 (PRO 1 GLUKOSE):</label>
+            <select id="r3-net" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+              <option value="">-- Netto-Bilanz auswählen --</option>
+              <option value="-2">-2 ATP</option>
+              <option value="0">0 ATP (Ausgeglichen: -2 in Phase I, +2 in Schritt 7)</option>
+              <option value="+2">+2 ATP</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="feedback-r3" class="hidden rounded-xl p-4 text-sm"></div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-800">
+          <button onclick="switchSubStep(3, 1)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold cursor-pointer">
+            ← Zurück
+          </button>
+          <button onclick="validateRoom3()" class="px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm tracking-wide transition shadow-lg shadow-emerald-500/20 cursor-pointer">
+            RAUM 3 VALIDIEREN & ZUM FINALE →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ROOM 4 ==================== -->
+    <section id="screen-room-4" class="hidden fade-in space-y-6">
+      
+      <!-- Mission Header + Illustration Card -->
+      <div class="bg-slate-900/90 border border-rose-500/40 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono-tech text-xs font-bold">RAUM 4 VON 4 • FINALE (SCHRITTE 8–10)</span>
+          <span class="text-xs font-mono-tech text-slate-400">Zell-Energiebilanz: <strong class="text-emerald-400">+2 Netto-ATP (Ziel)</strong></span>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-white mb-4">Forensische Toxikologie & Master-Bilanz</h2>
+
+        <div class="grid md:grid-cols-12 gap-6 items-center">
+          <!-- Clear Task Box -->
+          <div class="md:col-span-7 bg-slate-950/90 border border-slate-800 rounded-xl p-5 space-y-3">
+            <div class="text-xs font-mono-tech uppercase tracking-wider text-rose-400 font-bold">📋 Dein Auftrag im Finale:</div>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Drei Zellproben wurden mit Stoffwechselgiften manipuliert. Identifiziere die Toxine und berechne die Gesamtbilanz für die Notabschaltung:
+            </p>
+            <ol class="text-sm text-slate-200 space-y-2 list-decimal list-inside">
+              <li><strong class="text-white">Schritt 4.1:</strong> Ordne den drei Laborbefunden (Alpha, Beta, Gamma) das jeweilige Gift zu.</li>
+              <li><strong class="text-white">Schritt 4.2:</strong> Berechne den 4-stelligen Abschluss-Code für <strong>3 normale + 2 arsenatvergiftete Glukosemoleküle</strong>.</li>
+            </ol>
+          </div>
+
+          <!-- Diagram Card -->
+          <div class="md:col-span-5">
+            <div onclick="openLightbox('images/modul4_toxikologie.jpg', 'Abb. 4: Angriffspunkte der Inhibitoren Iodacetat, Arsenat und Fluorid in der Ertragsphase')" class="group relative rounded-xl overflow-hidden border border-slate-700 hover:border-rose-400 cursor-zoom-in bg-slate-950">
+              <img src="images/modul4_toxikologie.jpg" alt="Forensische Toxikologie der Glykolyse" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300" />
+              <div class="bg-slate-950/90 px-3 py-2 flex items-center justify-between text-xs text-slate-300 border-t border-slate-800">
+                <span>Abb. 4: Inhibitoren der Ertragsphase</span>
+                <span class="text-rose-400 font-semibold">🔍 Vergrößern</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-step Navigation Tabs -->
+      <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+        <button onclick="switchSubStep(4, 1)" id="tab-r4-s1" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer bg-cyan-500 text-slate-950">
+          4.1 Forensische Gift-Diagnose
+        </button>
+        <button onclick="switchSubStep(4, 2)" id="tab-r4-s2" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer text-slate-400 hover:text-white">
+          4.2 Master-Bilanzcode
+        </button>
+      </div>
+
+      <!-- Sub-step 4.1 -->
+      <div id="panel-r4-s1" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+        <div>
+          <h3 class="text-lg font-bold text-white">Schritt 4.1: Drei manipulierte Proben diagnostizieren</h3>
+          <p class="text-sm text-slate-400 mt-1">Vergleiche die Metabolit-Staus mit <strong class="text-rose-300">Abb. 4</strong> und dem Labor-Handbuch (Akte IV).</p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Probe Alpha -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-12 gap-4 items-center">
+            <div class="sm:col-span-7">
+              <span class="text-xs font-mono-tech text-amber-400 font-bold">PROBE ALPHA</span>
+              <p class="text-sm text-slate-200 mt-1">Massive Anhäufung von <strong>2-Phosphoglycerat (2-PG)</strong>; kein PEP und kein Pyruvat messbar.</p>
+            </div>
+            <div class="sm:col-span-5">
+              <select id="r4-toxin1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+                <option value="">-- Inhibitor wählen --</option>
+                <option value="fluoride">Fluorid-Ionen (F⁻)</option>
+                <option value="arsenate">Arsenat (AsO₄³⁻)</option>
+                <option value="iodoacetate">Iodacetat</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Probe Beta -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-12 gap-4 items-center">
+            <div class="sm:col-span-7">
+              <span class="text-xs font-mono-tech text-amber-400 font-bold">PROBE BETA</span>
+              <p class="text-sm text-slate-200 mt-1">Kein 1,3-BPG nachweisbar; direkt <strong>3-Phosphoglycerat</strong>. NADH wird gebildet, aber <strong>kein ATP in Schritt 7</strong>!</p>
+            </div>
+            <div class="sm:col-span-5">
+              <select id="r4-toxin2" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+                <option value="">-- Inhibitor wählen --</option>
+                <option value="fluoride">Fluorid-Ionen (F⁻)</option>
+                <option value="arsenate">Arsenat (AsO₄³⁻)</option>
+                <option value="iodoacetate">Iodacetat</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Probe Gamma -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-12 gap-4 items-center">
+            <div class="sm:col-span-7">
+              <span class="text-xs font-mono-tech text-amber-400 font-bold">PROBE GAMMA</span>
+              <p class="text-sm text-slate-200 mt-1">Anhäufung von <strong>GAP und DHAP</strong>; vollständiger Stopp ab Schritt 6 (kein NADH).</p>
+            </div>
+            <div class="sm:col-span-5">
+              <select id="r4-toxin3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white">
+                <option value="">-- Inhibitor wählen --</option>
+                <option value="fluoride">Fluorid-Ionen (F⁻)</option>
+                <option value="arsenate">Arsenat (AsO₄³⁻)</option>
+                <option value="iodoacetate">Iodacetat</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="switchSubStep(4, 2)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-sm transition cursor-pointer">
+            Weiter zu Schritt 4.2 →
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-step 4.2 -->
+      <div id="panel-r4-s2" class="hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div class="bg-slate-950 border border-cyan-500/30 rounded-xl p-5 space-y-2">
+          <div class="text-xs font-mono-tech text-cyan-400 font-bold">RECHENAUFGABE FÜR DIE SYSTEMFREIGABE</div>
+          <p class="text-sm sm:text-base text-slate-200 leading-relaxed">
+            In einer Zellkultur werden gleichzeitig <strong class="text-emerald-400">3 Moleküle Glukose unter Normalbedingungen</strong> UND <strong class="text-amber-400">2 Moleküle Glukose in Anwesenheit von Arsenat (AsO₄³⁻)</strong> vollständig bis zum Pyruvat abgebaut.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center space-y-2">
+            <div class="text-xs font-mono-tech text-cyan-400 font-bold">ZAHL 1</div>
+            <p class="text-xs text-slate-400">Netto-ATP gesamt (aus allen 5 Glukose)</p>
+            <input type="text" id="r4-num1" maxlength="2" placeholder="?" class="code-digit w-20 h-14 mx-auto block" />
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center space-y-2">
+            <div class="text-xs font-mono-tech text-cyan-400 font-bold">ZAHL 2</div>
+            <p class="text-xs text-slate-400">Gebildete NADH-Moleküle gesamt</p>
+            <input type="text" id="r4-num2" maxlength="2" placeholder="?" class="code-digit w-20 h-14 mx-auto block" />
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center space-y-2">
+            <div class="text-xs font-mono-tech text-cyan-400 font-bold">ZAHL 3</div>
+            <p class="text-xs text-slate-400">Gebildete Pyruvat-Moleküle gesamt</p>
+            <input type="text" id="r4-num3" maxlength="2" placeholder="?" class="code-digit w-20 h-14 mx-auto block" />
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center space-y-2">
+            <div class="text-xs font-mono-tech text-cyan-400 font-bold">ZAHL 4</div>
+            <p class="text-xs text-slate-400">Freigesetztes H₂O (Schritt 9) gesamt</p>
+            <input type="text" id="r4-num4" maxlength="2" placeholder="?" class="code-digit w-20 h-14 mx-auto block" />
+          </div>
+        </div>
+
+        <div id="feedback-r4" class="hidden rounded-xl p-4 text-sm"></div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-800">
+          <button onclick="switchSubStep(4, 1)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold cursor-pointer">
+            ← Zurück
+          </button>
+          <button onclick="validateRoom4()" class="px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm tracking-wide transition shadow-lg shadow-emerald-500/20 cursor-pointer">
+            NOTABSCHALTUNG AUSFÜHREN & ZELLE RETTEN ✓
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VICTORY SCREEN ==================== -->
+    <section id="screen-victory" class="hidden fade-in">
+      <div class="bg-slate-900/95 border border-emerald-500/40 rounded-2xl p-8 sm:p-10 text-center shadow-2xl space-y-6">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-3xl">
+          🧬
+        </div>
+        <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono-tech text-xs font-bold">
+          MISSION ERFOLGREICH ABGESCHLOSSEN
+        </div>
+        <h2 class="text-3xl font-extrabold text-white">Zellulärer Blackout abgewendet!</h2>
+        <p class="text-slate-300 max-w-xl mx-auto">
+          Hervorragende Arbeit! Die Glykolyse läuft stabil im Fließgleichgewicht, alle Inhibitoren wurden identifiziert und die zelluläre ATP-Versorgung ist gesichert.
+        </p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto pt-2">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="text-xs text-slate-400 font-mono-tech">RESTZEIT</div>
+            <div id="final-time" class="text-2xl font-extrabold text-emerald-400 font-mono-tech mt-1">--:--</div>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="text-xs text-slate-400 font-mono-tech">FEHLVERSUCHE</div>
+            <div id="final-errors" class="text-2xl font-extrabold text-cyan-400 font-mono-tech mt-1">0</div>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 col-span-2 sm:col-span-1">
+            <div class="text-xs text-slate-400 font-mono-tech">BEWERTUNG</div>
+            <div id="final-rank" class="text-lg font-extrabold text-amber-400 mt-1">EXZELLENT</div>
+          </div>
+        </div>
+
+        <div class="pt-4">
+          <button onclick="location.reload()" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold cursor-pointer">
+            Neuen Durchlauf starten
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== GAME OVER SCREEN ==================== -->
+    <section id="screen-gameover" class="hidden fade-in">
+      <div class="bg-slate-900/95 border border-rose-500/40 rounded-2xl p-8 sm:p-10 text-center shadow-2xl space-y-6">
+        <div class="w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto text-3xl">
+          ⚠️
+        </div>
+        <h2 class="text-3xl font-extrabold text-white">Zeit abgelaufen – ATP-Kollaps</h2>
+        <p class="text-slate-300 max-w-lg mx-auto">
+          Das zelluläre Membranpotenzial ist zusammengebrochen, bevor der Stoffwechselweg stabilisiert werden konnte.
+        </p>
+        <button onclick="location.reload()" class="px-6 py-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-sm cursor-pointer">
+          Erneut versuchen
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer with Subtle Teacher Mode -->
+  <footer class="border-t border-slate-900 py-4 px-6 text-xs text-slate-500">
+    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <span>Biologie Oberstufe • Modul: Zytosolischer Energiestoffwechsel</span>
+      <button onclick="openTeacherPinModal()" class="text-slate-600 hover:text-cyan-400 transition font-mono-tech cursor-pointer">
+        [Lehrkraft-Modus / Schnelltest]
+      </button>
+    </div>
+
+    <!-- Collapsible Teacher Panel -->
+    <div id="teacher-panel" class="hidden max-w-4xl mx-auto mt-3 p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="font-mono-tech text-cyan-400 font-bold">Springe zu:</span>
+        <button onclick="goToRoom(1)" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">Raum 1</button>
+        <button onclick="goToRoom(2)" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">Raum 2</button>
+        <button onclick="goToRoom(3)" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">Raum 3</button>
+        <button onclick="goToRoom(4)" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer">Raum 4</button>
+      </div>
+      <button onclick="autoSolveCurrentRoom()" class="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 font-semibold cursor-pointer">
+        Aktuellen Raum automatisch ausfüllen
+      </button>
+    </div>
+  </footer>
+
+  <!-- ==================== HANDBOOK MODAL ==================== -->
+  <div id="handbook-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-cyan-400 text-lg">📘</span>
+          <h3 class="text-lg font-extrabold text-white">Labor-Kompendium: Glykolyse (Oberstufe)</h3>
+        </div>
+        <button onclick="closeHandbook()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold cursor-pointer">✕</button>
+      </div>
+
+      <!-- Handbook Tabs -->
+      <div class="px-6 pt-3 border-b border-slate-800 flex flex-wrap gap-2">
+        <button onclick="switchHandbookTab(1)" id="hb-tab-1" class="px-3 py-2 text-xs font-bold border-b-2 border-cyan-400 text-cyan-400 cursor-pointer">I. Übersicht & Schaubilder</button>
+        <button onclick="switchHandbookTab(2)" id="hb-tab-2" class="px-3 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-white cursor-pointer">II. Regulation (PFK-1)</button>
+        <button onclick="switchHandbookTab(3)" id="hb-tab-3" class="px-3 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-white cursor-pointer">III. Thermodynamik & Redox</button>
+        <button onclick="switchHandbookTab(4)" id="hb-tab-4" class="px-3 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-white cursor-pointer">IV. Toxikologie & Gifte</button>
+      </div>
+
+      <!-- Handbook Content -->
+      <div class="p-6 overflow-y-auto space-y-4 text-sm text-slate-300 leading-relaxed">
+        
+        <!-- Tab 1 -->
+        <div id="hb-content-1" class="space-y-4">
+          <p><strong class="text-white">Gesamtbilanz der Glykolyse (Zytosol):</strong><br/>
+          C₆H₁₂O₆ + 2 NAD⁺ + 2 ADP + 2 Pᵢ → 2 Pyruvat (C₃H₃O₃⁻) + 2 NADH + 2 H⁺ + 2 ATP + 2 H₂O</p>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div onclick="openLightbox('images/modul1_investition.jpg', 'Abb. 1: Investitionsphase')" class="border border-slate-800 rounded-xl p-2 bg-slate-950 cursor-zoom-in hover:border-cyan-400">
+              <img src="images/modul1_investition.jpg" class="w-full h-32 object-cover rounded-lg mb-1" />
+              <div class="text-xs text-center text-cyan-400">Abb. 1: Investitionsphase (Klick zum Zoom)</div>
+            </div>
+            <div onclick="openLightbox('images/modul2_spaltung.jpg', 'Abb. 2: Spaltungsreaktor')" class="border border-slate-800 rounded-xl p-2 bg-slate-950 cursor-zoom-in hover:border-cyan-400">
+              <img src="images/modul2_spaltung.jpg" class="w-full h-32 object-cover rounded-lg mb-1" />
+              <div class="text-xs text-center text-cyan-400">Abb. 2: Spaltung GAP / DHAP (Klick zum Zoom)</div>
+            </div>
+            <div onclick="openLightbox('images/modul3_redox.jpg', 'Abb. 3: Redox & Substratkettenphosphorylierung')" class="border border-slate-800 rounded-xl p-2 bg-slate-950 cursor-zoom-in hover:border-cyan-400">
+              <img src="images/modul3_redox.jpg" class="w-full h-32 object-cover rounded-lg mb-1" />
+              <div class="text-xs text-center text-cyan-400">Abb. 3: Schritte 6 & 7 (Klick zum Zoom)</div>
+            </div>
+            <div onclick="openLightbox('images/modul4_toxikologie.jpg', 'Abb. 4: Inhibitoren')" class="border border-slate-800 rounded-xl p-2 bg-slate-950 cursor-zoom-in hover:border-cyan-400">
+              <img src="images/modul4_toxikologie.jpg" class="w-full h-32 object-cover rounded-lg mb-1" />
+              <div class="text-xs text-center text-cyan-400">Abb. 4: Forensische Gifte (Klick zum Zoom)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2 -->
+        <div id="hb-content-2" class="hidden space-y-3">
+          <h4 class="font-bold text-white text-base">Akte II: Die Phosphofruktokinase-1 (PFK-1) als Hauptschrittmacher</h4>
+          <p>Die PFK-1 katalysiert Schritt 3 (Fruktose-6-phosphat → Fruktose-1,6-bisphosphat) und ist das wichtigste allosterisch regulierte Schlüsselenzym der Glykolyse:</p>
+          <ul class="list-disc list-inside space-y-2">
+            <li><strong class="text-rose-400">ATP (allosterischer Hemmstoff):</strong> Obwohl ATP ein Substrat ist, bindet es bei hoher Konzentration an eine allosterische Hemmstelle und senkt die Substrataffinität drastisch.</li>
+            <li><strong class="text-emerald-400">AMP (allosterischer Aktivator):</strong> Steigt bei Energieverbrauch stark an (über Adenylatkinase: 2 ADP ⇌ ATP + AMP) und hebt die ATP-Hemmung sofort auf.</li>
+            <li><strong class="text-rose-400">Citrat (allosterischer Hemmstoff):</strong> Signalisiert, dass der Citratzyklus gesättigt ist und genügend Biosynthese-Vorstufen vorliegen.</li>
+            <li><strong class="text-rose-400">H⁺-Ionen / saurer pH-Wert (Hemmung):</strong> Bei starker Milchsäurebildung (pH ~ 6,4) wird die PFK-1 gehemmt, um die Zelle vor einer tödlichen Azidose zu schützen. Optimal arbeitet sie bei neutralem pH (~ 7,2).</li>
+          </ul>
+        </div>
+
+        <!-- Tab 3 -->
+        <div id="hb-content-3" class="hidden space-y-3">
+          <h4 class="font-bold text-white text-base">Akte III: Fließgleichgewicht & Energetische Kopplung</h4>
+          <p><strong class="text-cyan-400">1. Triosephosphat-Isomerase (Schritt 5):</strong><br/>
+          Unter Standardbedingungen liegt das Gleichgewicht zu 96 % auf Seite von DHAP (ΔG°' = +7,5 kJ/mol). In der lebenden Zelle wird GAP jedoch in Schritt 6 permanent weiterverarbeitet. Nach dem <em>Prinzip von Le Chatelier</em> verschiebt dieser ständige Produktentzug das reale ΔG ins Negative.</p>
+          <p><strong class="text-cyan-400">2. GAPDH & Phosphoglycerat-Kinase (Schritte 6 & 7):</strong><br/>
+          Die GAPDH oxidiert die Aldehydgruppe von GAP (NAD⁺ → NADH + H⁺) und bindet dabei ein <strong>freies anorganisches Phosphat (Pᵢ)</strong> aus dem Zytosol. Das entstehende <strong>1,3-Bisphosphoglycerat</strong> besitzt ein energiereiches gemischtes Säureanhydrid (ΔG°' = -49,3 kJ/mol), dessen Phosphatgruppe in Schritt 7 durch die <strong>Phosphoglycerat-Kinase</strong> direkt auf ADP übertragen wird (<em>Substratkettenphosphorylierung</em>).</p>
+        </div>
+
+        <!-- Tab 4 -->
+        <div id="hb-content-4" class="hidden space-y-3">
+          <h4 class="font-bold text-white text-base">Akte IV: Toxikologische Inhibitoren der Ertragsphase</h4>
+          <div class="space-y-3">
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+              <strong class="text-amber-400">1. Iodacetat (hemmt Schritt 6 / GAPDH):</strong><br/>
+              Alkyliert irreversibel die essentielle Thiolgruppe (-SH) eines Cysteinrests im aktiven Zentrum der GAPDH. Folge: Stau von GAP und DHAP, kein NADH.
+            </div>
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+              <strong class="text-amber-400">2. Arsenat (AsO₄³⁻, entkoppelt Schritte 6 & 7):</strong><br/>
+              Chemisch analog zu Phosphat (Pᵢ). GAPDH baut Arsenat statt Pᵢ ein → es entsteht instabiles <em>1-Arseno-3-phosphoglycerat</em>, das spontan (ohne Enzym und ohne ATP-Gewinn!) zu 3-Phosphoglycerat hydrolysiert. Die Glykolyse läuft zwar bis zum Pyruvat weiter (inklusive NADH- und H₂O-Bildung), verliert aber die beiden ATP aus Schritt 7 → <strong>Netto-ATP-Bilanz sinkt auf 0 ATP!</strong>
+            </div>
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+              <strong class="text-amber-400">3. Fluorid-Ionen (F⁻, hemmt Schritt 9 / Enolase):</strong><br/>
+              Bildet mit Mg²⁺-Ionen und Phosphat einen stabilen Komplex, der das katalytische Magnesium im aktiven Zentrum der Enolase blockiert. Folge: Anhäufung von 2-Phosphoglycerat.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LIGHTBOX IMAGE MODAL ==================== -->
+  <div id="lightbox-modal" onclick="closeLightbox()" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-4 cursor-zoom-out">
+    <div class="max-w-5xl w-full space-y-3" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between text-sm text-slate-300">
+        <span id="lightbox-caption" class="font-semibold text-cyan-300">Abbildung</span>
+        <button onclick="closeLightbox()" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer">Schließen ✕</button>
+      </div>
+      <img id="lightbox-img" src="" alt="Vergrößerte Labor-Abbildung" class="w-full max-h-[82vh] object-contain rounded-xl border border-slate-700 bg-slate-900" />
+    </div>
+  </div>
+
+
+  <!-- ==================== TEACHER PIN MODAL (CODE: 1111) ==================== -->
+  <div id="teacher-pin-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-extrabold text-white">🔒 Lehrkraft-Authentifizierung</h3>
+        <button onclick="closeTeacherPinModal()" class="text-slate-400 hover:text-white font-bold cursor-pointer">✕</button>
+      </div>
+      <p class="text-xs text-slate-400">Bitte den 4-stelligen Lehrkraft-PIN eingeben, um Schnelltest und Raumsprung freizuschalten:</p>
+      <input type="password" id="teacher-pin-input" maxlength="4" placeholder="••••" onkeydown="if(event.key==='Enter') checkTeacherPin()" class="code-digit w-full h-12 text-center tracking-widest" />
+      <div id="teacher-pin-error" class="hidden text-xs text-rose-400 font-semibold">❌ Falscher PIN-Code. Zugriff verweigert.</div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button onclick="closeTeacherPinModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">Abbrechen</button>
+        <button onclick="checkTeacherPin()" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold cursor-pointer">Freischalten</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script>
+    let timeRemaining = 30 * 60; // 30 minutes in seconds
+    let timerInterval = null;
+    let currentRoom = 0; // 0 = intro, 1..4 = rooms
+    let errorCount = 0;
+
+    function startMission() {
+      const vid = document.getElementById("intro-video");
+      if (vid) { vid.pause(); }
+      goToRoom(1);
+      if (!timerInterval) {
+        timerInterval = setInterval(tickTimer, 1000);
+      }
+    }
+
+    function tickTimer() {
+      if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        showScreen('screen-gameover');
+        return;
+      }
+      timeRemaining--;
+      renderTimer();
+    }
+
+    function renderTimer() {
+      const mins = Math.floor(timeRemaining / 60);
+      const secs = timeRemaining % 60;
+      const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      const display = document.getElementById('timer-display');
+      const box = document.getElementById('timer-box');
+      const dot = document.getElementById('timer-dot');
+
+      display.textContent = formatted;
+
+      if (timeRemaining < 300) {
+        box.classList.add('border-rose-500');
+        display.classList.add('text-rose-400');
+        dot.classList.remove('bg-emerald-400');
+        dot.classList.add('bg-rose-500');
+      }
+    }
+
+    function applyPenalty(seconds = 60) {
+      errorCount++;
+      timeRemaining = Math.max(0, timeRemaining - seconds);
+      renderTimer();
+
+      const flash = document.getElementById('penalty-flash-layer');
+      flash.classList.remove('flash-penalty');
+      void flash.offsetWidth;
+      flash.classList.add('flash-penalty');
+    }
+
+    function showScreen(id) {
+      const screens = ['screen-intro', 'screen-room-1', 'screen-room-2', 'screen-room-3', 'screen-room-4', 'screen-victory', 'screen-gameover'];
+      screens.forEach(s => document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToRoom(roomNum) {
+      currentRoom = roomNum;
+      showScreen(`screen-room-${roomNum}`);
+      switchSubStep(roomNum, 1);
+
+      // Update top pills
+      for (let i = 1; i <= 4; i++) {
+        const pill = document.getElementById(`pill-${i}`);
+        if (i < roomNum) {
+          pill.className = 'px-3 py-1 rounded-full text-xs font-mono-tech border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-bold';
+          pill.textContent = `✓ Raum ${i}`;
+        } else if (i === roomNum) {
+          pill.className = 'px-3 py-1 rounded-full text-xs font-mono-tech border border-cyan-400 bg-cyan-500/15 text-cyan-300 font-bold';
+          pill.textContent = `Raum ${i}`;
+        } else {
+          pill.className = 'px-3 py-1 rounded-full text-xs font-mono-tech border border-slate-800 text-slate-500';
+          pill.textContent = `Raum ${i}`;
+        }
+      }
+    }
+
+    function switchSubStep(room, step) {
+      const maxSteps = room === 1 ? 3 : 2;
+      for (let s = 1; s <= maxSteps; s++) {
+        const tab = document.getElementById(`tab-r${room}-s${s}`);
+        const panel = document.getElementById(`panel-r${room}-s${s}`);
+        if (s === step) {
+          tab.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer bg-cyan-500 text-slate-950';
+          panel.classList.remove('hidden');
+        } else {
+          tab.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition cursor-pointer text-slate-400 hover:text-white';
+          panel.classList.add('hidden');
+        }
+      }
+    }
+
+    // Room 1 Sliders Live Update
+    function updatePFKLabels() {
+      const levels = ['NIEDRIG', 'MITTEL', 'HOCH'];
+      const phLevels = ['SAUER (6,4)', 'LEICHT SAUER (6,8)', 'NEUTRAL (7,2)'];
+
+      const atp = parseInt(document.getElementById('sl-atp').value);
+      const amp = parseInt(document.getElementById('sl-amp').value);
+      const cit = parseInt(document.getElementById('sl-citrate').value);
+      const ph = parseInt(document.getElementById('sl-ph').value);
+
+      document.getElementById('lbl-atp').textContent = levels[atp];
+      document.getElementById('lbl-amp').textContent = levels[amp];
+      document.getElementById('lbl-citrate').textContent = levels[cit];
+      document.getElementById('lbl-ph').textContent = phLevels[ph];
+
+      const badge = document.getElementById('pfk1-live-badge');
+      if (atp === 0 && amp === 2 && cit === 0 && ph === 2) {
+        badge.className = 'px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-mono-tech text-xs font-bold';
+        badge.textContent = 'STATUS: MAXIMAL AKTIVIERT';
+      } else {
+        badge.className = 'px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono-tech text-xs font-bold';
+        badge.textContent = 'STATUS: GEDROSSELT';
+      }
+    }
+
+    function showFeedback(boxId, isSuccess, htmlContent) {
+      const box = document.getElementById(boxId);
+      box.classList.remove('hidden', 'bg-rose-500/10', 'border-rose-500/40', 'text-rose-200', 'bg-emerald-500/10', 'border-emerald-500/40', 'text-emerald-200', 'animate-shake');
+      if (isSuccess) {
+        box.classList.add('bg-emerald-500/10', 'border', 'border-emerald-500/40', 'text-emerald-200');
+      } else {
+        box.classList.add('bg-rose-500/10', 'border', 'border-rose-500/40', 'text-rose-200', 'animate-shake');
+      }
+      box.innerHTML = htmlContent;
+    }
+
+    // ==================== VALIDATION ROOM 1 ====================
+    function validateRoom1() {
+      const partA =
+        document.getElementById('r1-enz1').value === 'hexokinase' &&
+        document.getElementById('r1-atp1').value === 'invest' &&
+        document.getElementById('r1-enz2').value === 'isomerase' &&
+        document.getElementById('r1-atp2').value === 'none' &&
+        document.getElementById('r1-enz3').value === 'pfk1' &&
+        document.getElementById('r1-atp3').value === 'invest';
+
+      const partB =
+        document.getElementById('sl-atp').value === '0' &&
+        document.getElementById('sl-amp').value === '2' &&
+        document.getElementById('sl-citrate').value === '0' &&
+        document.getElementById('sl-ph').value === '2';
+
+      const c1 = document.getElementById('r1-code1').value.trim();
+      const c2 = document.getElementById('r1-code2').value.trim();
+      const c3 = document.getElementById('r1-code3').value.trim();
+      const partC = (c1 === '6' && c2 === '1' && c3 === '6') || (c1 === '6' && c2 === '6' && c3 === '1');
+
+      if (partA && partB && partC) {
+        goToRoom(2);
+      } else {
+        applyPenalty(60);
+        showFeedback('feedback-r1', false, `
+          <div class="font-bold text-rose-400 mb-2">⚠️ Validierung fehlgeschlagen (-60 Sekunden Zeitstrafe)</div>
+          <ul class="space-y-1 text-xs">
+            <li>${partA ? '✅' : '❌'} <strong>Schritt 1.1 (Enzyme & ATP):</strong> ${partA ? 'Korrekt' : 'Prüfe Enzymreihenfolge und ATP-Verbrauch in Schritt 1 & 3.'}</li>
+            <li>${partB ? '✅' : '❌'} <strong>Schritt 1.2 (PFK-1 Regler):</strong> ${partB ? 'Optimal aktiviert' : 'Prüfe die allosterische Hemmung/Aktivierung im Handbuch (Akte II).'}</li>
+            <li>${partC ? '✅' : '❌'} <strong>Schritt 1.3 (Struktur-Code):</strong> ${partC ? 'Korrekt' : 'Prüfe die C-Atome (C1 & C6) in Abb. 1.'}</li>
+          </ul>
+        `);
+      }
+    }
+
+    // ==================== VALIDATION ROOM 2 ====================
+    function validateRoom2() {
+      const partA =
+        document.getElementById('r2-gap-group').value === 'aldose' &&
+        document.getElementById('r2-gap-fate').value === 'direct' &&
+        document.getElementById('r2-dhap-group').value === 'ketose' &&
+        document.getElementById('r2-dhap-fate').value === 'isomerize';
+
+      const radio = document.querySelector('input[name="r2-thermo"]:checked');
+      const factor = document.getElementById('r2-factor').value.trim();
+      const partB = radio && radio.value === 'le_chatelier' && factor === '2';
+
+      if (partA && partB) {
+        goToRoom(3);
+      } else {
+        applyPenalty(60);
+        showFeedback('feedback-r2', false, `
+          <div class="font-bold text-rose-400 mb-2">⚠️ Validierung fehlgeschlagen (-60 Sekunden Zeitstrafe)</div>
+          <ul class="space-y-1 text-xs">
+            <li>${partA ? '✅' : '❌'} <strong>Schritt 2.1 (Struktur-Analyse):</strong> ${partA ? 'Korrekt' : 'Vergleiche Aldehyd- vs. Ketogruppe in Abb. 2.'}</li>
+            <li>${partB ? '✅' : '❌'} <strong>Schritt 2.2 (Gleichgewicht & Faktor):</strong> ${partB ? 'Korrekt' : 'Prüfe das Prinzip von Le Chatelier und die Anzahl der Triosen pro Glukose.'}</li>
+          </ul>
+        `);
+      }
+    }
+
+    // ==================== VALIDATION ROOM 3 ====================
+    function validateRoom3() {
+      const partA =
+        document.getElementById('r3-pi').value === 'inorganic_pi' &&
+        document.getElementById('r3-redox').value === 'nad_red' &&
+        document.getElementById('r3-bond').value === 'anhydride';
+
+      const partB =
+        document.getElementById('r3-pgk').value === 'pgk' &&
+        document.getElementById('r3-mech').value === 'substrate' &&
+        document.getElementById('r3-net').value === '0';
+
+      if (partA && partB) {
+        goToRoom(4);
+      } else {
+        applyPenalty(60);
+        showFeedback('feedback-r3', false, `
+          <div class="font-bold text-rose-400 mb-2">⚠️ Validierung fehlgeschlagen (-60 Sekunden Zeitstrafe)</div>
+          <ul class="space-y-1 text-xs">
+            <li>${partA ? '✅' : '❌'} <strong>Schritt 3.1 (GAPDH-Kammer):</strong> ${partA ? 'Korrekt' : 'Prüfe die Phosphatquelle (kein ATP!) und das Coenzym in Abb. 3.'}</li>
+            <li>${partB ? '✅' : '❌'} <strong>Schritt 3.2 (Substratkettenphosphorylierung):</strong> ${partB ? 'Korrekt' : 'Prüfe Enzymname, Mechanismus und bisherige Netto-Bilanz.'}</li>
+          </ul>
+        `);
+      }
+    }
+
+    // ==================== VALIDATION ROOM 4 ====================
+    function validateRoom4() {
+      const partA =
+        document.getElementById('r4-toxin1').value === 'fluoride' &&
+        document.getElementById('r4-toxin2').value === 'arsenate' &&
+        document.getElementById('r4-toxin3').value === 'iodoacetate';
+
+      const n1 = document.getElementById('r4-num1').value.trim();
+      const n2 = document.getElementById('r4-num2').value.trim();
+      const n3 = document.getElementById('r4-num3').value.trim();
+      const n4 = document.getElementById('r4-num4').value.trim();
+      const partB = n1 === '6' && n2 === '10' && n3 === '10' && n4 === '10';
+
+      if (partA && partB) {
+        clearInterval(timerInterval);
+        document.getElementById('final-time').textContent = document.getElementById('timer-display').textContent;
+        document.getElementById('final-errors').textContent = errorCount;
+        document.getElementById('final-rank').textContent = errorCount === 0 ? 'MEISTERHAFT' : errorCount <= 2 ? 'SEHR GUT' : 'BESTANDEN';
+        showScreen('screen-victory');
+      } else {
+        applyPenalty(60);
+        showFeedback('feedback-r4', false, `
+          <div class="font-bold text-rose-400 mb-2">⚠️ Validierung fehlgeschlagen (-60 Sekunden Zeitstrafe)</div>
+          <ul class="space-y-1 text-xs">
+            <li>${partA ? '✅' : '❌'} <strong>Schritt 4.1 (Gift-Diagnose):</strong> ${partA ? 'Korrekt' : 'Vergleiche die gehemmten Enzyme in Abb. 4 & Handbuch Akte IV.'}</li>
+            <li>${partB ? '✅' : '❌'} <strong>Schritt 4.2 (Master-Bilanz):</strong> ${partB ? 'Korrekt' : 'Beachte: Arsenat senkt nur Netto-ATP auf 0, NADH, Pyruvat und H₂O entstehen trotzdem!'}</li>
+          </ul>
+        `);
+      }
+    }
+
+    // ==================== HANDBOOK & LIGHTBOX ====================
+    function openHandbook() {
+      document.getElementById('handbook-modal').classList.remove('hidden');
+    }
+    function closeHandbook() {
+      document.getElementById('handbook-modal').classList.add('hidden');
+    }
+    function switchHandbookTab(idx) {
+      for (let i = 1; i <= 4; i++) {
+        const tab = document.getElementById(`hb-tab-${i}`);
+        const content = document.getElementById(`hb-content-${i}`);
+        if (i === idx) {
+          tab.className = 'px-3 py-2 text-xs font-bold border-b-2 border-cyan-400 text-cyan-400 cursor-pointer';
+          content.classList.remove('hidden');
+        } else {
+          tab.className = 'px-3 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-white cursor-pointer';
+          content.classList.add('hidden');
+        }
+      }
+    }
+
+    function openLightbox(src, caption) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox-caption').textContent = caption;
+      document.getElementById('lightbox-modal').classList.remove('hidden');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox-modal').classList.add('hidden');
+    }
+
+    // ==================== TEACHER MODE (PIN: 1111) ====================
+    let teacherUnlocked = false;
+    function openTeacherPinModal() {
+      if (teacherUnlocked) {
+        document.getElementById('teacher-panel').classList.toggle('hidden');
+        return;
+      }
+      document.getElementById('teacher-pin-input').value = '';
+      document.getElementById('teacher-pin-error').classList.add('hidden');
+      document.getElementById('teacher-pin-modal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('teacher-pin-input').focus(), 50);
+    }
+    function closeTeacherPinModal() {
+      document.getElementById('teacher-pin-modal').classList.add('hidden');
+    }
+    function checkTeacherPin() {
+      const pin = document.getElementById('teacher-pin-input').value.trim();
+      if (pin === '1111') {
+        teacherUnlocked = true;
+        closeTeacherPinModal();
+        document.getElementById('teacher-panel').classList.remove('hidden');
+      } else {
+        document.getElementById('teacher-pin-error').classList.remove('hidden');
+      }
+    }
+
+    function autoSolveCurrentRoom() {
+      if (currentRoom === 0) goToRoom(1);
+      if (currentRoom === 1) {
+        document.getElementById('r1-enz1').value = 'hexokinase';
+        document.getElementById('r1-atp1').value = 'invest';
+        document.getElementById('r1-enz2').value = 'isomerase';
+        document.getElementById('r1-atp2').value = 'none';
+        document.getElementById('r1-enz3').value = 'pfk1';
+        document.getElementById('r1-atp3').value = 'invest';
+        document.getElementById('sl-atp').value = '0';
+        document.getElementById('sl-amp').value = '2';
+        document.getElementById('sl-citrate').value = '0';
+        document.getElementById('sl-ph').value = '2';
+        updatePFKLabels();
+        document.getElementById('r1-code1').value = '6';
+        document.getElementById('r1-code2').value = '1';
+        document.getElementById('r1-code3').value = '6';
+      } else if (currentRoom === 2) {
+        document.getElementById('r2-gap-group').value = 'aldose';
+        document.getElementById('r2-gap-fate').value = 'direct';
+        document.getElementById('r2-dhap-group').value = 'ketose';
+        document.getElementById('r2-dhap-fate').value = 'isomerize';
+        document.querySelector('input[name="r2-thermo"][value="le_chatelier"]').checked = true;
+        document.getElementById('r2-factor').value = '2';
+      } else if (currentRoom === 3) {
+        document.getElementById('r3-pi').value = 'inorganic_pi';
+        document.getElementById('r3-redox').value = 'nad_red';
+        document.getElementById('r3-bond').value = 'anhydride';
+        document.getElementById('r3-pgk').value = 'pgk';
+        document.getElementById('r3-mech').value = 'substrate';
+        document.getElementById('r3-net').value = '0';
+      } else if (currentRoom === 4) {
+        document.getElementById('r4-toxin1').value = 'fluoride';
+        document.getElementById('r4-toxin2').value = 'arsenate';
+        document.getElementById('r4-toxin3').value = 'iodoacetate';
+        document.getElementById('r4-num1').value = '6';
+        document.getElementById('r4-num2').value = '10';
+        document.getElementById('r4-num3').value = '10';
+        document.getElementById('r4-num4').value = '10';
+      }
+    }
+  </script>
+</body>
+</html>
